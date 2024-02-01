@@ -1,0 +1,6 @@
+*.o
+*.hex
+*.bin
+*.lst
+*.map
+ch32v003fun/
