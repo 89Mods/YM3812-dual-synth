@@ -42,6 +42,7 @@ If you are running windows, download the pre-built executable files [here](https
 A pre-built binary of the synthesizer’s firmware is [here](https://github.com/89Mods/YM3812-dual-synth/blob/main/RV_Firmware/synth.bin). To flash it using a WCHLinkE, the command-line `minichlink(.exe) -w synth.bin flash -b` should work on either OS, and you are already done.
 
 If you did not buy the WCHLinkE, but have an Arduino Uno laying around, you can use Ardulink. It is available on its own repo [here](https://gitlab.com/BlueSyncLine/arduino-ch32v003-swio). Follow the instructions there to set it up. Note that it requires a Linux install or WSL to build, but can be *used* from either OS.
+Additionally, the repo mentions connecting the nanoCH’s power to an Arduino pin, but I’ve found that to be really unstable and it still works fine with the nanoCH powered continuously. You only need to wire up SWIO to the Arduino (its the middle pin of the three-pin header on top).
 
 On Windows: `minichlink.exe -c COMx -w synth.bin flash -b` where "COMx" needs to be substituted with whichever COM port your Arduino uses.
 
