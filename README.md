@@ -39,7 +39,7 @@ If you are running Linux, it is part of a repo [here](https://github.com/cnlohr/
 
 If you are running windows, download the pre-built executable files [here](https://github.com/cnlohr/ch32v003fun/blob/master/minichlink/minichlink.exe) and [here](https://github.com/cnlohr/ch32v003fun/blob/master/minichlink/libusb-1.0.dll) (you need both files).
 
-A pre-built binary of the synthesizer’s firmware is [here](https://example.com/). To flash it using a WCHLinkE, the command-line `minichlink(.exe) -w synth.bin flash -b` should work on either OS, and you are already done.
+A pre-built binary of the synthesizer’s firmware is [here](https://github.com/89Mods/YM3812-dual-synth/blob/main/RV_Firmware/synth.bin). To flash it using a WCHLinkE, the command-line `minichlink(.exe) -w synth.bin flash -b` should work on either OS, and you are already done.
 
 If you did not buy the WCHLinkE, but have an Arduino Uno laying around, you can use Ardulink. It is available on its own repo [here](https://gitlab.com/BlueSyncLine/arduino-ch32v003-swio). Follow the instructions there to set it up. Note that it requires a Linux install or WSL to build, but can be *used* from either OS.
 
@@ -75,7 +75,7 @@ Switch to Stereo: `0xF0 0x7E 0x56 0x76 0xF7`
 
 Switch to Independent: `0xF0 0x7E 0x56 0x75 0xF7`
 
-By default, the synthesizer listens to all channels in Mono and Stereo modes and in Independent mode, channels 1 - 8 will go to the first chip and 9 - 16 to the second. An alternative firmware image is available [here](https://example.com) where the synthesizer only listens to channel 15 in Mono and Stereo and in Independent, channel 14 goes to the first and channel 15 to the second chip.
+By default, the synthesizer listens to all channels in Mono and Stereo modes and in Independent mode, channels 1 - 8 will go to the first chip and 9 - 16 to the second. An alternative firmware image is available [here](https://github.com/89Mods/YM3812-dual-synth/blob/main/RV_Firmware/synth_alt.bin) where the synthesizer only listens to channel 15 in Mono and Stereo and in Independent, channel 14 goes to the first and channel 15 to the second chip.
 
 To fully customize this behavior, you will need to build the firmware yourself, after editing `synth.c` and changing the values in the `accepted_channels` array for Mono and Stereo and `accepted_channels_first` and `accepted_channels_second` for Independent. These are right at the beginning of the file and are just lists of MIDI channels (warning: 0-indexed).
 
