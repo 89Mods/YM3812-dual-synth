@@ -58,3 +58,27 @@ The UI should be straight forward. After selecting the the .op2 file and the MID
 The uploader software releases the MIDI port when it is done, meaning you can keep it open and use it multiple times by just clicking the button again. The file is also re-loaded each time and does not need to be selected again.
 
 ## Switching Modes
+
+The synthesizer can operate in three distinct modes.
+
+**Mono**: both sound chips are combined into a single output. This allows their voices to be used together, 18 in total. This is the most basic and default mode.
+
+**Stereo**: every note is played on both chips simultaniously, but its volume on either chip is adjusted according to the MIDI channel’s stereo pan, giving the illusion of stereo audio. This, however, reduced the amount of usable voices back to 9.
+
+**Independent**: each chip acts as a separate synthesizer. Each responds only to events on a specific range of MIDI channels and their outputs can be individually obtained on the same output as the stereo audio.
+
+MIDI sysex messages are used to switch between these. The codes are as follows:
+
+Switch to Mono: `0xF0 0x7E 0x56 0x72 0xF7`
+
+Switch to Stereo: `0xF0 0x7E 0x56 0x76 0xF7`
+
+Switch to Independent: `0xF0 0x7E 0x56 0x75 0xF7`
+
+By default, the synthesizer listens to all channels in Mono and Stereo modes and in Independent mode, channels 1 - 8 will go to the first chip and 9 - 16 to the second. An alternative firmware image is available [here](https://example.com) where the synthesizer only listens to channel 15 in Mono and Stereo and in Independent, channel 14 goes to the first and channel 15 to the second chip.
+
+To fully customize this behavior, you will need to build the firmware yourself, after editing `synth.c` and changing the values in the `accepted_channels` array for Mono and Stereo and `accepted_channels_first` and `accepted_channels_second` for Independent. These are right at the beginning of the file and are just lists of MIDI channels (warning: 0-indexed).
+
+## Building the firmware from source
+
+TODO
