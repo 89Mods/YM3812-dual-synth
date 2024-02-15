@@ -39,7 +39,7 @@ If you are running Linux, it is part of a repo [here](https://github.com/cnlohr/
 
 If you are running windows, download the pre-built executable files [here](https://github.com/cnlohr/ch32v003fun/blob/master/minichlink/minichlink.exe) and [here](https://github.com/cnlohr/ch32v003fun/blob/master/minichlink/libusb-1.0.dll) (you need both files).
 
-A pre-built binary of the synthesizer’s firmware is [here](https://github.com/89Mods/YM3812-dual-synth/blob/main/RV_Firmware/synth.bin). To flash it using a WCHLinkE, the command-line `minichlink(.exe) -w synth.bin flash -b` should work on either OS, and you are already done.
+A pre-built binary of the synthesizer’s firmware is [here](https://github.com/89Mods/YM3812-dual-synth/blob/main/RV_Firmware/synth.bin). To use a WCH-LinkE to flash it, wire up the single-wire IO pin of the programmer to the SWIO pin of the nanoCH (the middle of the three-pin header on the back). To then use it to flash the firmware file, the command-line `minichlink(.exe) -w synth.bin flash -b` should work on either OS, and you are already done.
 
 If you did not buy the WCHLinkE, but have an Arduino Uno laying around, you can use Ardulink. It is available on its own repo [here](https://gitlab.com/BlueSyncLine/arduino-ch32v003-swio). Follow the instructions there to set it up. Note that it requires a Linux install or WSL to build, but can be *used* from either OS.
 Additionally, the repo mentions connecting the nanoCH’s power to an Arduino pin, but I’ve found that to be really unstable and it still works fine with the nanoCH powered continuously. You only need to wire up SWIO to the Arduino (its the middle pin of the three-pin header on top).
@@ -82,4 +82,8 @@ To fully customize this behavior, you will need to build the firmware yourself, 
 
 ## Building the firmware from source
 
-TODO
+If you want to build the firmware from source, it has do be done on a native Linux install, or in Windows Subsystem for Linux. You will need to install the [RISC-V GNU Toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain) first, though this step varies between distros. I recommend cloning the repo and building it from source, as that is what worked for me.
+
+Then, clone this repo and execute the script to set up the environment: `sh clone_subrepos_and_patch.sh`
+
+Then, you can enter the RV_Firmware directory and use the makefile there. Simply `make` will both build the firmware and then flash the output using minichlink.
