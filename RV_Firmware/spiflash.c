@@ -87,13 +87,13 @@ void chip_erase() {
 	}
 }
 
-void sector_erase() {
+void sector_erase(uint8_t which) {
 	disable_rom_wp();
 	sel_rom();
 	SPI_begin_8();
 	SPI_transfer_8(0x20);
 	SPI_transfer_8(0);
-	SPI_transfer_8(0);
+	SPI_transfer_8(which << 4);
 	SPI_transfer_8(0);
 	desel_rom();
 	SPI_end();
@@ -101,15 +101,15 @@ void sector_erase() {
 }
 
 uint32_t curr_rom_addr;
-void rom_begin_write() {
-	curr_rom_addr = 0;
+void rom_begin_write(uint32_t address) {
+	curr_rom_addr = address;
 	disable_rom_wp();
 	sel_rom();
 	SPI_begin_8();
 	SPI_transfer_8(0x02);
-	SPI_transfer_8(0);
-	SPI_transfer_8(0);
-	SPI_transfer_8(0);
+	SPI_transfer_8((curr_rom_addr >> 16) & 0xFF);
+	SPI_transfer_8((curr_rom_addr >> 8) & 0xFF);
+	SPI_transfer_8(curr_rom_addr & 0xFF);
 }
 
 void rom_write_data(uint8_t* data, uint32_t len) {

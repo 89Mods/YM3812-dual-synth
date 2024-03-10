@@ -118,6 +118,17 @@ int main() {
 				Delay_Ms(500);
 			}
 		}
+		//Get current mode
+		rom_begin_read(0x1100);
+		for(int i = 0; i < 4; i++) all_ym_channel_channels[i] = SPI_transfer_8(0);
+		rom_finish_read();
+		if(all_ym_channel_channels[0] != 0x06 || all_ym_channel_channels[1] != 0x21) {
+			stereo_mode = independent_mode = 0;
+		}else {
+			stereo_mode = all_ym_channel_channels[2];
+			independent_mode = all_ym_channel_channels[3];
+			if(independent_mode) stereo_mode = 0;
+		}
 	}
 	
 soft_reset:
@@ -125,6 +136,18 @@ soft_reset:
 	stereo_state = (synth_state){.ym_reloads = all_ym_reloads, .chip_base = 0, .num_channels = YM3812_NUM_CHANNELS, .ym_channel_notes = all_ym_channel_notes, .ym_channel_channels = all_ym_channel_channels, .ym_channel_change_steps = all_ym_channel_change_steps, .ym_curr_timestep = 2, .to_turn_on = all_to_turn_on};
 	independent_states[0] = (synth_state){.ym_reloads = all_ym_reloads, .chip_base = 0, .num_channels = YM3812_NUM_CHANNELS, .ym_channel_notes = all_ym_channel_notes, .ym_channel_channels = all_ym_channel_channels, .ym_channel_change_steps = all_ym_channel_change_steps, .ym_curr_timestep = 2, .to_turn_on = all_to_turn_on};
 	independent_states[1] = (synth_state){.ym_reloads = all_ym_reloads + YM3812_NUM_CHANNELS, .chip_base = 1, .num_channels = YM3812_NUM_CHANNELS, .ym_channel_notes = all_ym_channel_notes + YM3812_NUM_CHANNELS, .ym_channel_channels = all_ym_channel_channels + YM3812_NUM_CHANNELS, .ym_channel_change_steps = all_ym_channel_change_steps + YM3812_NUM_CHANNELS, .ym_curr_timestep = 2, .to_turn_on = all_to_turn_on + YM3812_NUM_CHANNELS};
+	
+	{
+		//Save current mode
+		sector_erase(1);
+		rom_begin_write(0x1100);
+		all_ym_channel_channels[0] = 0x06;
+		all_ym_channel_channels[1] = 0x21;
+		all_ym_channel_channels[2] = stereo_mode;
+		all_ym_channel_channels[3] = independent_mode;
+		rom_write_data(all_ym_channel_channels, 4);
+		rom_finish_write();
+	}
 	
 	//TODO: use memset here
 	for(uint8_t i = 0; i < YM3812_NUM_CHANNELS*2; i++) {
@@ -171,8 +194,10 @@ soft_reset:
 				wait_for_uart_data(1); //velocity, ignored
 				if(!independent_mode) {
 					if(key != 255 && isAcceptedChannel(channel)) releaseNote(channel, key & 127, s);
-				}else {
-					
+				}else if(key != 255) {
+					uint8_t idx = isAcceptedChannel(channel);
+					if(idx == 1) releaseNote(channel, key & 127, independent_states);
+					else if(idx == 2) releaseNote(channel, key & 127, independent_states + 1);
 				}
 			}else if(upper == 0b1001) {
 				//Note On event
@@ -183,21 +208,37 @@ soft_reset:
 						if(velocity == 0) releaseNote(channel, key & 127, s);
 						else playNote(channel, key & 127, velocity & 127, s);
 					}
-				}else {
-					
+				}else if(key != 255 && velocity != 255) {
+					uint8_t idx = isAcceptedChannel(channel);
+					if(idx == 1) {
+						if(velocity == 0) releaseNote(channel, key & 127, independent_states);
+						else playNote(channel, key & 127, velocity & 127, independent_states);
+					}else if(idx == 2) {
+						if(velocity == 0) releaseNote(channel, key & 127, independent_states + 1);
+						else playNote(channel, key & 127, velocity & 127, independent_states + 1);
+					}
 				}
 			}else if(upper == 0b1100) {
 				//Program Change
 				uint8_t program = wait_for_uart_data(1);
-				if(!independent_mode) {
-					if(program != 255 && isAcceptedChannel(channel)) {
+				if(program != 255) {
+					if(!independent_mode) {
+						if(isAcceptedChannel(channel)) {
+							program &= 127;
+							midi_channel_programs[channel] = program;
+							midi_channel_patches[channel] = get_patch_for(program, 0);
+							for(uint8_t i = 0; i < s->num_channels; i++) if(s->ym_channel_channels[i] == channel) s->ym_reloads[i] = 1;
+						}
+					}else {
 						program &= 127;
 						midi_channel_programs[channel] = program;
 						midi_channel_patches[channel] = get_patch_for(program, 0);
-						for(uint8_t i = 0; i < s->num_channels; i++) if(s->ym_channel_channels[i] == channel) s->ym_reloads[i] = 1;
+						uint8_t idx = isAcceptedChannel(channel);
+						if(idx == 1 || idx == 2) {
+							synth_state *s2 = idx == 1 ? independent_states : independent_states + 1;
+							for(uint8_t i = 0; i < s2->num_channels; i++) if(s2->ym_channel_channels[i] == channel) s2->ym_reloads[i] = 1;
+						}
 					}
-				}else {
-					
 				}
 			}else if(upper == 0b1110) {
 				//Pitch Bend Change
@@ -214,15 +255,25 @@ soft_reset:
 				//Channel Mode Message
 				uint8_t c = wait_for_uart_data(1);
 				uint8_t v = wait_for_uart_data(1);
-				if(channel == 14) {
-				if((c == 120 && v == 0) || (c == 123 && v == 0)) {
-					//All off!
-					releaseAllNotes(s);
+				if(!independent_mode) {
+					if(isAcceptedChannel(channel)) {
+						if((c == 120 && v == 0) || (c == 123 && v == 0)) {
+							//All off!
+							releaseAllNotes(s);
+						}
+						if((c == 8 || c == 10) && stereo_mode) {
+							//Stereo pan
+							midi_channel_pans[channel] = v & 0b0111111;
+						}
+					}
+				}else {
+					uint8_t idx = isAcceptedChannel(channel);
+					if(idx != 0) {
+						if((c == 120 && v == 0) || (c == 123 && v == 0)) {
+							releaseAllNotes(idx == 1 ? independent_states : independent_states + 1);
+						}
+					}
 				}
-				if((c == 8 || c == 10) && stereo_mode) {
-					//Stereo pan
-					midi_channel_pans[channel] = v & 0b0111111;
-				}}
 			}else if(upper == 0b1010 || next == 0b11110010) {
 				//Unsupported two-argument events
 				wait_for_uart_data(1);
@@ -244,16 +295,16 @@ soft_reset:
 					}
 					while(mid != 0b11110111) mid = wait_for_uart_data(1);
 					//Sector ERASE
-					if(id1 == 0b01010110 && id2 == 0b01110011) sector_erase();
+					if(id1 == 0b01010110 && id2 == 0b01110011) sector_erase(0);
 					//Chip ERASE
 					if(id1 == 0b01010110 && id2 == 0b01111011) chip_erase();
 					//Switch to MONO
-					if(id1 == 0b01010110 && id2 == 0b01110010 && stereo_mode) {
+					if(id1 == 0b01010110 && id2 == 0b01110010) {
 						stereo_mode = 0;
 						goto soft_reset;
 					}
 					//Switch to STEREO
-					if(id1 == 0b01010110 && id2 == 0b01110110 && !stereo_mode) {
+					if(id1 == 0b01010110 && id2 == 0b01110110) {
 						stereo_mode = 1;
 						goto soft_reset;
 					}
@@ -540,7 +591,7 @@ void load_patches_from_midi() {
 	GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), low);
 	uint8_t patchData[14];
 	uint8_t x;
-	rom_begin_write();
+	rom_begin_write(0);
 	for(uint16_t i = 0; i < 176; i++) { //128 melodic + 47 drums + 1 dummy
 		for(uint8_t j = 0; j < 14; j++) {
 			x = wait_for_uart_data(1);

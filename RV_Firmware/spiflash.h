@@ -8,7 +8,7 @@ uint8_t init_spi();
 static inline void sel_rom()   { GPIO_digitalWrite(GPIOv_from_PORT_PIN(ROMCS_PORT, ROMCS_PORT_NUM), low); }
 static inline void desel_rom() { GPIO_digitalWrite(GPIOv_from_PORT_PIN(ROMCS_PORT, ROMCS_PORT_NUM), high); }
 void chip_erase();
-void sector_erase();
+void sector_erase(uint8_t which);
 void rom_begin_write();
 void rom_begin_read(uint32_t addr);
 void rom_finish_read();
