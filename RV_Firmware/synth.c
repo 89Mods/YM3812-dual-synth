@@ -2,9 +2,9 @@
 
 #include <stdint.h>
 
-#include "ch32v003fun.h"
+#include "ch32fun.h"
 #include "ch32v003_GPIO_branchless.h"
-#include "../ch32v003fun/extralibs/ch32v003_SPI.h"
+#include "../ch32fun/extralibs/ch32v003_SPI.h"
 #include "ch32v003_uart.h"
 #include "spiflash.h"
 

@@ -2,10 +2,10 @@
 
 #include <stdint.h>
 
-#include "../ch32v003fun/extralibs/ch32v003_SPI.h"
+#include "../ch32fun/extralibs/ch32v003_SPI.h"
 #include "ch32v003_GPIO_branchless.h"
 #include "spiflash.h"
-#include "ch32v003fun.h"
+#include "ch32fun.h"
 
 //Initializes SPI and resets the ROM
 uint8_t init_spi() {

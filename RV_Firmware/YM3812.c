@@ -5,7 +5,7 @@
 #include "patch.h"
 #include "YM3812.h"
 
-#include "ch32v003fun.h"
+#include "ch32fun.h"
 #include "ch32v003_GPIO_branchless.h"
 
 const uint8_t channel_map[YM3812_NUM_CHANNELS] = {0,1,2,6,7,8,12,13,14};

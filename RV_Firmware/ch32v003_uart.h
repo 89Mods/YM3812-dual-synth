@@ -54,7 +54,7 @@
  */
 #include <stdarg.h>
 #include <string.h>
-#include "ch32v003fun.h"
+#include "ch32fun.h"
 // use uart only if debug printf is enables
 #if defined( FUNCONF_USE_DEBUGPRINTF ) && FUNCONF_USE_DEBUGPRINTF
 
@@ -105,7 +105,7 @@
 	#define UART_PORT		GPIOD 
 	#define UART_PIN_TX 	5
 	#define UART_PIN_RX 	6
-	#define UART_AFIO_PCFR1	(UART_AFIO_PCFR1_RESET_MASK)	//default 00
+	#define UART_AFIO_PCFR1	(0)	//default 00
 #endif
 // if no config is provided, use tx+rx as default
 #if !defined(UART_MODE_TX) && !defined(UART_MODE_RX) && !defined(UART_MODE_TXRX)
