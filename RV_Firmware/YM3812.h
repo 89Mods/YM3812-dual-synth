@@ -5,21 +5,13 @@
 #define YM3812_NUM_OPERATORS 18
 #define YM3812_FREQ 4000000
 
-#define YM3812_RST_PORT GPIO_port_C
-#define YM3812_RST_PORT_NUM 2
-#define YM3812_A0_PORT GPIO_port_D
-#define YM3812_A0_PORT_NUM 4
-#define YM3812_WR_PORT GPIO_port_C
-#define YM3812_WR_PORT_NUM 1
-#define LS164_DATA_PORT GPIO_port_C
-#define LS164_DATA_PORT_NUM 0
-#define LS164_CLK_PORT GPIO_port_D
-#define LS164_CLK_PORT_NUM 2
-
-#define YM3812_FIRST_CS_PORT GPIO_port_D
-#define YM3812_FIRST_CS_PORT_NUM 3
-#define YM3812_SECOND_CS_PORT GPIO_port_A
-#define YM3812_SECOND_CS_PORT_NUM 1
+#define YM3812_RST PC2
+#define YM3812_A0 PD4
+#define YM3812_WR PC1
+#define LS164_DATA PC0
+#define LS164_CLK PD2
+#define YM3812_FIRST_CS PD3
+#define YM3812_SECOND_CS PA1
 
 typedef struct {
     uint8_t cs_port;

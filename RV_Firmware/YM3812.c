@@ -1,40 +1,30 @@
-#include "defines.h"
+#include "ch32fun.h"
 
 #include <stdint.h>
 
 #include "patch.h"
 #include "YM3812.h"
 
-#include "ch32fun.h"
-#include "ch32v003_GPIO_branchless.h"
-
 const uint8_t channel_map[YM3812_NUM_CHANNELS] = {0,1,2,6,7,8,12,13,14};
 const uint8_t op_map[YM3812_NUM_OPERATORS] = {0,1,2,3,4,5,8,9,10,11,12,13,16,17,18,19,20,21};
 
 void ym3812_reset(ym3812_i *ym) {
-	GPIO_port_enable(YM3812_RST_PORT);
-	GPIO_port_enable(YM3812_A0_PORT);
-	GPIO_port_enable(YM3812_FIRST_CS_PORT);
-	GPIO_port_enable(YM3812_SECOND_CS_PORT);
-	GPIO_port_enable(YM3812_WR_PORT);
-	GPIO_port_enable(LS164_DATA_PORT);
-	GPIO_port_enable(LS164_CLK_PORT);
-	GPIO_pinMode(GPIOv_from_PORT_PIN(YM3812_RST_PORT, YM3812_RST_PORT_NUM), GPIO_pinMode_O_pushPull, GPIO_Speed_10MHz);
-	GPIO_pinMode(GPIOv_from_PORT_PIN(YM3812_A0_PORT, YM3812_A0_PORT_NUM), GPIO_pinMode_O_pushPull, GPIO_Speed_10MHz);
-	GPIO_pinMode(GPIOv_from_PORT_PIN(YM3812_FIRST_CS_PORT, YM3812_FIRST_CS_PORT_NUM), GPIO_pinMode_O_pushPull, GPIO_Speed_10MHz);
-	GPIO_pinMode(GPIOv_from_PORT_PIN(YM3812_SECOND_CS_PORT, YM3812_SECOND_CS_PORT_NUM), GPIO_pinMode_O_pushPull, GPIO_Speed_10MHz);
-	GPIO_pinMode(GPIOv_from_PORT_PIN(YM3812_WR_PORT, YM3812_WR_PORT_NUM), GPIO_pinMode_O_pushPull, GPIO_Speed_10MHz);
-	GPIO_pinMode(GPIOv_from_PORT_PIN(LS164_DATA_PORT, LS164_DATA_PORT_NUM), GPIO_pinMode_O_pushPull, GPIO_Speed_10MHz);
-	GPIO_pinMode(GPIOv_from_PORT_PIN(LS164_CLK_PORT, LS164_CLK_PORT_NUM), GPIO_pinMode_O_pushPull, GPIO_Speed_10MHz);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_FIRST_CS_PORT, YM3812_FIRST_CS_PORT_NUM), high);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_SECOND_CS_PORT, YM3812_SECOND_CS_PORT_NUM), high);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_A0_PORT, YM3812_A0_PORT_NUM), low);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_WR_PORT, YM3812_WR_PORT_NUM), high);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(LS164_DATA_PORT, LS164_DATA_PORT_NUM), low);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(LS164_CLK_PORT, LS164_CLK_PORT_NUM), low);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_RST_PORT, YM3812_RST_PORT_NUM), low);
+	funPinMode(YM3812_RST, GPIO_Speed_50MHz | GPIO_CNF_OUT_PP);
+	funPinMode(YM3812_A0, GPIO_Speed_50MHz | GPIO_CNF_OUT_PP);
+	funPinMode(YM3812_WR, GPIO_Speed_50MHz | GPIO_CNF_OUT_PP);
+	funPinMode(LS164_DATA, GPIO_Speed_50MHz | GPIO_CNF_OUT_PP);
+	funPinMode(LS164_CLK, GPIO_Speed_50MHz | GPIO_CNF_OUT_PP);
+	funPinMode(YM3812_FIRST_CS, GPIO_Speed_50MHz | GPIO_CNF_OUT_PP);
+	funPinMode(YM3812_SECOND_CS, GPIO_Speed_50MHz | GPIO_CNF_OUT_PP);
+	funDigitalWrite(YM3812_FIRST_CS, FUN_HIGH);
+	funDigitalWrite(YM3812_SECOND_CS, FUN_HIGH);
+	funDigitalWrite(YM3812_A0, FUN_LOW);
+	funDigitalWrite(YM3812_WR, FUN_HIGH);
+	funDigitalWrite(LS164_DATA, FUN_LOW);
+	funDigitalWrite(LS164_CLK, FUN_LOW);
+	funDigitalWrite(YM3812_RST, FUN_LOW);
 	Delay_Ms(100);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_RST_PORT, YM3812_RST_PORT_NUM), high);
+	funDigitalWrite(YM3812_RST, FUN_HIGH);
 	
 	for(uint8_t i = 0; i < YM3812_NUM_OPERATORS; i++) ym->reg_40[i] = 0;
 	for(uint8_t i = 0; i < YM3812_NUM_CHANNELS; i++) ym->reg_B0[i] = 0;
@@ -46,41 +36,41 @@ void ym3812_reset(ym3812_i *ym) {
 }
 
 void ym3812_sendData(ym3812_i *ym, uint8_t reg, uint8_t val) {
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_A0_PORT, YM3812_A0_PORT_NUM), low);
-	if(ym->cs_port) GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_SECOND_CS_PORT, YM3812_SECOND_CS_PORT_NUM), low);
-	else GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_FIRST_CS_PORT, YM3812_FIRST_CS_PORT_NUM), low);
+	funDigitalWrite(YM3812_A0, FUN_LOW);
+	if(ym->cs_port) funDigitalWrite(YM3812_SECOND_CS, FUN_LOW);
+	else funDigitalWrite(YM3812_FIRST_CS, FUN_LOW);
 	for(uint8_t i = 0; i < 8; i++) {
-		if((reg & 128) != 0) GPIO_digitalWrite(GPIOv_from_PORT_PIN(LS164_DATA_PORT, LS164_DATA_PORT_NUM), high);
-		else GPIO_digitalWrite(GPIOv_from_PORT_PIN(LS164_DATA_PORT, LS164_DATA_PORT_NUM), low);
-		Delay_Us(0.05);
-		GPIO_digitalWrite(GPIOv_from_PORT_PIN(LS164_CLK_PORT, LS164_CLK_PORT_NUM), high);
-		Delay_Us(0.05);
-		GPIO_digitalWrite(GPIOv_from_PORT_PIN(LS164_CLK_PORT, LS164_CLK_PORT_NUM), low);
-		Delay_Us(0.05);
+		if((reg & 128) != 0) funDigitalWrite(LS164_DATA, FUN_HIGH);
+		else funDigitalWrite(LS164_DATA, FUN_LOW);
+		Delay_Us(0.5);
+		funDigitalWrite(LS164_CLK, FUN_HIGH);
+		Delay_Us(0.5);
+		funDigitalWrite(LS164_CLK, FUN_LOW);
+		Delay_Us(0.5);
 		reg <<= 1;
 	}
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_WR_PORT, YM3812_WR_PORT_NUM), low);
+	funDigitalWrite(YM3812_WR, FUN_LOW);
 	Delay_Us(0.2);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_WR_PORT, YM3812_WR_PORT_NUM), high);
+	funDigitalWrite(YM3812_WR, FUN_HIGH);
 	Delay_Us(0.2);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_A0_PORT, YM3812_A0_PORT_NUM), high);
+	funDigitalWrite(YM3812_A0, FUN_HIGH);
 	for(uint8_t i = 0; i < 8; i++) {
-		if((val & 128) != 0) GPIO_digitalWrite(GPIOv_from_PORT_PIN(LS164_DATA_PORT, LS164_DATA_PORT_NUM), high);
-		else GPIO_digitalWrite(GPIOv_from_PORT_PIN(LS164_DATA_PORT, LS164_DATA_PORT_NUM), low);
-		Delay_Us(0.05);
-		GPIO_digitalWrite(GPIOv_from_PORT_PIN(LS164_CLK_PORT, LS164_CLK_PORT_NUM), high);
-		Delay_Us(0.05);
-		GPIO_digitalWrite(GPIOv_from_PORT_PIN(LS164_CLK_PORT, LS164_CLK_PORT_NUM), low);
-		Delay_Us(0.05);
+		if((val & 128) != 0) funDigitalWrite(LS164_DATA, FUN_HIGH);
+		else funDigitalWrite(LS164_DATA, FUN_LOW);
+		Delay_Us(0.5);
+		funDigitalWrite(LS164_CLK, FUN_HIGH);
+		Delay_Us(0.5);
+		funDigitalWrite(LS164_CLK, FUN_LOW);
+		Delay_Us(0.5);
 		val <<= 1;
 	}
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_WR_PORT, YM3812_WR_PORT_NUM), low);
+	funDigitalWrite(YM3812_WR, FUN_LOW);
 	Delay_Us(0.2);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_WR_PORT, YM3812_WR_PORT_NUM), high);
+	funDigitalWrite(YM3812_WR, FUN_HIGH);
 	Delay_Us(0.2);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_A0_PORT, YM3812_A0_PORT_NUM), low);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_SECOND_CS_PORT, YM3812_SECOND_CS_PORT_NUM), high);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(YM3812_FIRST_CS_PORT, YM3812_FIRST_CS_PORT_NUM), high);
+	funDigitalWrite(YM3812_A0, FUN_LOW);
+	funDigitalWrite(YM3812_SECOND_CS, FUN_HIGH);
+	funDigitalWrite(YM3812_FIRST_CS, FUN_HIGH);
 	Delay_Us(0.2);
 }
 
@@ -134,8 +124,7 @@ void ym3812_init_clock() {
 	// Enable TIM1
 	RCC->APB2PCENR |= RCC_APB2Periph_TIM1;
 	// PD0 is T1CH1N, 10MHz Output alt func, push-pull
-	GPIOD->CFGLR &= ~(0xf);
-	GPIOD->CFGLR |= GPIO_Speed_10MHz | GPIO_CNF_OUT_PP_AF;
+	funPinMode(PD0, GPIO_Speed_50MHz | GPIO_CNF_OUT_PP_AF);
 	
 	// Reset TIM1 to init all regs
 	RCC->APB2PRSTR |= RCC_APB2Periph_TIM1;

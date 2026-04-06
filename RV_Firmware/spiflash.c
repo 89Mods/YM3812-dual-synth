@@ -1,18 +1,15 @@
-#include "defines.h"
+#include "ch32fun.h"
 
 #include <stdint.h>
 
-#include "../ch32fun/extralibs/ch32v003_SPI.h"
-#include "ch32v003_GPIO_branchless.h"
+#include "./ch32fun/extralibs/ch32v003_SPI.h"
 #include "spiflash.h"
-#include "ch32fun.h"
 
 //Initializes SPI and resets the ROM
 uint8_t init_spi() {
-	GPIO_port_enable(ROMCS_PORT);
-	GPIO_port_enable(GPIO_port_C);
 	RCC->APB2PCENR |= RCC_APB2Periph_TIM1;
-	GPIO_pinMode(GPIOv_from_PORT_PIN(ROMCS_PORT, ROMCS_PORT_NUM), GPIO_pinMode_O_pushPull, GPIO_Speed_10MHz);
+	funPinMode(ROMCS, GPIO_Speed_50MHz | GPIO_CNF_OUT_PP);
+	desel_rom();
 	SPI_init();
 	
 	Delay_Ms(1);
@@ -69,7 +66,7 @@ void disable_rom_wp() {
 			un_protect_rom();
 		}else break;
 	}
-	if((status & 0b00001110) != 0b00000010) while(1) GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), high); //TODO: Proper error handling
+	if((status & 0b00001110) != 0b00000010) while(1) funDigitalWrite(LED, FUN_HIGH); //TODO: Proper error handling
 }
 
 void chip_erase() {
@@ -80,9 +77,9 @@ void chip_erase() {
 	desel_rom();
 	SPI_end();
 	for(uint8_t i = 0; i < 4; i++) {
-		GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), high);
+		funDigitalWrite(LED, FUN_HIGH);
 		Delay_Ms(400);
-		GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), low);
+		funDigitalWrite(LED, FUN_LOW);
 		Delay_Ms(100);
 	}
 }

@@ -1,19 +1,14 @@
-#include "defines.h"
+#include "ch32fun.h"
 
 #include <stdint.h>
 
-#include "ch32fun.h"
-#include "ch32v003_GPIO_branchless.h"
-#include "../ch32fun/extralibs/ch32v003_SPI.h"
+#include "./ch32fun/extralibs/ch32v003_SPI.h"
 #include "ch32v003_uart.h"
 #include "spiflash.h"
 
 #include "patch.h"
 #include "YM3812.h"
 #include "fixedpoint.h"
-
-#define NO_LED
-#define THORINAIR
 
 #ifdef THORINAIR
 const uint8_t accepted_channels[] = {14};
@@ -95,12 +90,13 @@ uint8_t isAcceptedChannel(uint8_t channel) {
 
 int main() {
 	SystemInit();
-	GPIO_port_enable(GPIO_port_D);
-	GPIO_pinMode(GPIOv_from_PORT_PIN(GPIO_port_D, 6), GPIO_pinMode_O_pushPull, GPIO_Speed_10MHz);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), low);
+	funGpioInitAll();
 	UART_init();
+	funPinMode(LED, GPIO_Speed_10MHz | GPIO_CNF_OUT_PP);
+	funPinMode(PD5, GPIO_CNF_IN_FLOATING);
+	funDigitalWrite(LED, FUN_LOW);
 	Delay_Ms(500);
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), high);
+	funDigitalWrite(LED, FUN_HIGH);
 	ym3812_init_clock();
 	chips[0].cs_port = 0;
 	chips[1].cs_port = 1;
@@ -112,9 +108,9 @@ int main() {
 		//spiflash did not respond correctly to identify command
 		if(chipID != 0xEF && chipID != 0xC2) {
 			while(1) {
-				GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), high);
+				funDigitalWrite(LED, FUN_HIGH);
 				Delay_Ms(500);
-				GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), low);
+				funDigitalWrite(LED, FUN_LOW);
 				Delay_Ms(500);
 			}
 		}
@@ -172,7 +168,7 @@ soft_reset:
 	
 	synth_state *s = stereo_mode ? &stereo_state : &mono_state;
 	while(1) {
-		GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), low);
+		funDigitalWrite(LED, FUN_LOW);
 		uint8_t next = 0;
 		for(uint8_t i = 0; i < YM3812_NUM_CHANNELS*2; i++) {
 			if(next == YM3812_NUM_CHANNELS) next = 0;
@@ -184,7 +180,7 @@ soft_reset:
 		if((next & 128) == 0) continue;
 		while(1) {
 #ifndef NO_LED
-			GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), high);
+			funDigitalWrite(LED, FUN_HIGH);
 #endif
 			uint8_t upper = next >> 4;
 			uint8_t channel = next & 0b1111;
@@ -588,7 +584,7 @@ fixed32 key_frequency(uint8_t key, uint8_t bend) {
 }
 
 void load_patches_from_midi() {
-	GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), low);
+	funDigitalWrite(LED, FUN_LOW);
 	uint8_t patchData[14];
 	uint8_t x;
 	rom_begin_write(0);
@@ -612,17 +608,17 @@ void load_patches_from_midi() {
 	}
 	rom_finish_write();
 	for(uint8_t i = 0; i < 6; i++) {
-		GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), high);
+		funDigitalWrite(LED, FUN_HIGH);
 		Delay_Ms(50);
-		GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), low);
+		funDigitalWrite(LED, FUN_LOW);
 		Delay_Ms(250);
 	}
 	return;
 ERROR:
 	for(uint8_t i = 0; i < 16; i++) {
-		GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), high);
+		funDigitalWrite(LED, FUN_HIGH);
 		Delay_Ms(250);
-		GPIO_digitalWrite(GPIOv_from_PORT_PIN(GPIO_port_D, 6), low);
+		funDigitalWrite(LED, FUN_LOW);
 		Delay_Ms(250);
 	}
 }
